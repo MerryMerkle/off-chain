@@ -23,26 +23,43 @@ require('dotenv').config()
 const path = require('path')
 const app = require('express')()
 const http = require('http').Server(app)
-const io = require('socket.io')(http)
 const WebSocket = require('ws')
+const db = require('./utils/db')
+const announcer = require('./utils/announcer')(http)
 
-const event = (name, extra = {}) => JSON.stringify({ event: name, ...extra })
-const parseMessage = (handler) => (message) => handler(JSON.parse(message.data))
+const {
+  event,
+  parseMessage,
+  startPinging,
+  timeout,
+  formatTx,
+} = require('./utils')
 
-const startPinging = (ws) => {
-  const interval = setInterval(() => {
-    if (ws.readyState === 1) {
-      ws.send(event('ping'))
-    }
-  }, 20 * 1000)
+const handleDonationTransactions = async (txs) => {
+  for (let i = 0; i < txs.length; i++) {
+    const tx = formatTx(txs[i])
 
-  return () => clearInterval(interval)
-}
+    // add this tx to the donations list
+    await db.addDonation(tx)
 
-const handleDonationTransactions = (txs) => {
-  txs.forEach((tx) => {
+    // announce to most recent donation emitter
+    announcer.anounceRecentDonation(tx)
 
-  })
+    // update aggregate
+    await db.updateAggregateDonation(tx)
+
+    // re-announce leaderboard
+    announcer.announceLeaderboard(await db.getLeaderboard())
+
+    // update total amount
+    const total = await db.updateTotalDonationValue(tx.value)
+
+    // announce
+    announcer.announceTotalDonationValue(total)
+
+    // wait some time between txs to allow display on the frontend
+    await timeout(1000)
+  }
 }
 
 const etherscan = new WebSocket('wss://socket.etherscan.io/wshandler', {
@@ -60,6 +77,10 @@ etherscan.onmessage = parseMessage((message) => {
   switch (message.event) {
   case 'txlist': {
     handleDonationTransactions(message.result)
+      .catch((err) => {
+        console.error(err)
+        process.exit(1)
+      })
     break
   }
   case 'subscribe-txlist': {
@@ -93,8 +114,15 @@ app.get('/', function (req, res) {
   res.sendFile(path.join(__dirname, 'index.html'))
 })
 
-io.on('connection', function (socket) {
-  console.log('a user connected')
+announcer.io.on('connection', async (socket) => {
+  // @TOOD - abstract this constant better
+  socket.emit('LEADERBOARD', {
+    leaderboard: await db.getLeaderboard(),
+  })
+  socket.emit('TOTAL_DONATION_VALUE', {
+    // @TODO - replace with select instead of increment
+    value: (await db.updateTotalDonationValue(0)).toString(),
+  })
 })
 
 http.listen(3000, function () {

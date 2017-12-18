@@ -10,7 +10,17 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        const RECENT_DONATION = 'RECENT_DONATION'
+        const LEADERBOARD = 'LEADERBOARD'
+        const TIER_REACHED = 'TIER_REACHED'
+        const TOTAL_DONATION_VALUE = 'TOTAL_DONATION_VALUE'
+
         var socket = io();
+
+        socket.on(RECENT_DONATION, console.log.bind(console))
+        socket.on(LEADERBOARD, console.log.bind(console))
+        socket.on(TIER_REACHED, console.log.bind(console))
+        socket.on(TOTAL_DONATION_VALUE, console.log.bind(console))
     </script>
 </head>
 
