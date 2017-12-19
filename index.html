@@ -15,7 +15,7 @@
         const TIER_REACHED = 'TIER_REACHED'
         const TOTAL_DONATION_VALUE = 'TOTAL_DONATION_VALUE'
 
-        var socket = io();
+        var socket = io('merrymerkle-prod-v1.us-west-2.elasticbeanstalk.com');
 
         socket.on(RECENT_DONATION, console.log.bind(console))
         socket.on(LEADERBOARD, console.log.bind(console))

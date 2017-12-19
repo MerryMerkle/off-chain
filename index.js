@@ -71,7 +71,10 @@ etherscan.onopen = () => {
     address: process.env.DONATION_ADDRESS,
   }))
 }
-etherscan.onerror = console.error.bind(console)
+etherscan.onerror = (err) => {
+  console.error(err)
+  process.exit(1)
+}
 etherscan.onmessage = parseMessage((message) => {
   console.log(message)
   switch (message.event) {
