@@ -26,6 +26,7 @@ const http = require('http').Server(app)
 const WebSocket = require('ws')
 const db = require('./utils/db')
 const announcer = require('./utils/announcer')(http)
+const gdax = require('./utils/gdax')
 
 const {
   event,
@@ -54,8 +55,11 @@ const handleDonationTransactions = async (txs) => {
     // update total amount
     const total = await db.updateTotalDonationValue(tx.value)
 
+    // get usd value
+    const toUSD = await gdax.ethInUSD()
+
     // announce
-    announcer.announceTotalDonationValue(total)
+    announcer.announceTotalDonationValue(total, total.times(toUSD))
 
     // wait some time between txs to allow display on the frontend
     await timeout(1000)
@@ -118,13 +122,20 @@ app.get('/', function (req, res) {
 })
 
 announcer.io.on('connection', async (socket) => {
-  // @TOOD - abstract this constant better
+  // @TOOD - abstract this logic better
   socket.emit('LEADERBOARD', {
     leaderboard: await db.getLeaderboard(),
   })
+
+  // update total amount - fix this to just getter
+  const total = await db.updateTotalDonationValue(0)
+
+  // get usd value
+  const toUSD = await gdax.ethInUSD()
+
   socket.emit('TOTAL_DONATION_VALUE', {
-    // @TODO - replace with select instead of increment
-    value: (await db.updateTotalDonationValue(0)).toString(),
+    value: total.toString(),
+    inUSD: total.times(toUSD).toString(),
   })
 })
 

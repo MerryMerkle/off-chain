@@ -8,8 +8,11 @@ module.exports = (http) => {
 
   return {
     io,
-    announceTotalDonationValue: (value) => {
-      io.emit(TOTAL_DONATION_VALUE, { value: value.toString() })
+    announceTotalDonationValue: (value, inUSD) => {
+      io.emit(TOTAL_DONATION_VALUE, {
+        value: value.toString(),
+        inUSD: inUSD.toString(),
+      })
     },
     announceTierReached: (tier) => {
       io.emit(TIER_REACHED, { tier })
