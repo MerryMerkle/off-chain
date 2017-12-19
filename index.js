@@ -49,8 +49,10 @@ const handleDonationTransactions = async (txs) => {
     // update aggregate
     await db.updateAggregateDonation(tx)
 
-    // re-announce leaderboard
-    announcer.announceLeaderboard(await db.getLeaderboard())
+    // re-announce leaderboards
+    const top50 = await db.getLeaderboard(50)
+    announcer.announceLeaderboard(top50)
+    announcer.announceTreeLeaderboard(top50.slice(0, 31))
 
     // update total amount
     const total = await db.updateTotalDonationValue(tx.value)
@@ -122,10 +124,12 @@ app.get('/', function (req, res) {
 })
 
 announcer.io.on('connection', async (socket) => {
+
+  const top50 = await db.getLeaderboard(50)
   // @TOOD - abstract this logic better
-  socket.emit('LEADERBOARD', {
-    leaderboard: await db.getLeaderboard(),
-  })
+  socket.emit('LEADERBOARD', { leaderboard: top50 })
+
+  socket.emit('TREE_LEADERBOARD', { leaderboard: top50.slice(0, 31) })
 
   // update total amount - fix this to just getter
   const total = await db.updateTotalDonationValue(0)

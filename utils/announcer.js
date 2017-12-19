@@ -1,5 +1,6 @@
 const RECENT_DONATION = 'RECENT_DONATION'
 const LEADERBOARD = 'LEADERBOARD'
+const TREE_LEADERBOARD = 'TREE_LEADERBOARD'
 const TIER_REACHED = 'TIER_REACHED'
 const TOTAL_DONATION_VALUE = 'TOTAL_DONATION_VALUE'
 
@@ -19,6 +20,9 @@ module.exports = (http) => {
     },
     announceLeaderboard: (leaderboard) => {
       io.emit(LEADERBOARD, { leaderboard })
+    },
+    announceTreeLeaderboard: (leaderboard) => {
+      io.emit(TREE_LEADERBOARD, { leaderboard })
     },
     anounceRecentDonation: (tx) => {
       io.emit(RECENT_DONATION, {
