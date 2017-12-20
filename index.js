@@ -20,13 +20,17 @@
 //        confirmations: '6' } ] }
 
 require('dotenv').config()
-const path = require('path')
+const cors = require('cors')
 const app = require('express')()
 const http = require('http').Server(app)
 const WebSocket = require('ws')
 const db = require('./utils/db')
 const announcer = require('./utils/announcer')(http)
 const gdax = require('./utils/gdax')
+
+app.use(cors({
+  origin: '*',
+}))
 
 const {
   event,
@@ -118,10 +122,6 @@ const cancelPinger = startPinging(etherscan)
 etherscan.onclose = () => {
   cancelPinger()
 }
-
-app.get('/', function (req, res) {
-  res.sendFile(path.join(__dirname, 'index.html'))
-})
 
 announcer.io.on('connection', async (socket) => {
 
