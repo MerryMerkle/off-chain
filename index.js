@@ -69,6 +69,12 @@ const handleDonationTransactions = async (txs) => {
     // announce
     announcer.announceTotalDonationValue(total, total.times(toCAD))
 
+    // did we reach a new tier?
+    const tierId = await db.getNewTier(toCAD.toNumber())
+    if (tierId !== null) {
+      announcer.announceTierReached(tierId)
+    }
+
     // wait some time between txs to allow display on the frontend
     await timeout(1000)
   }

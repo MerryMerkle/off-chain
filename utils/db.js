@@ -16,6 +16,32 @@ const connect = Promise.resolve().then(() => {
 
 module.exports = {
   /**
+   * gets new tier
+   */
+  getNewTier: async (total) => {
+    await connect
+
+    const res = await client.query(`
+      SELECT id
+      FROM tiers
+      WHERE value < $1 AND reached = 0
+    `, [total])
+
+    if (res.rowCount === 0) {
+      return null
+    }
+
+    const id = res.rows[0].id
+
+    await client.query(`
+      UPDATE tiers
+      SET reached = 1
+      WHERE id = $1
+    `, [id])
+
+    return id
+  },
+  /**
    * sets name
    */
   setName: async (donor, name) => {
