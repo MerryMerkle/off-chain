@@ -61,11 +61,11 @@ const handleDonationTransactions = async (txs) => {
     // update total amount
     const total = await db.updateTotalDonationValue(tx.value)
 
-    // get usd value
-    const toUSD = await gdax.ethInUSD()
+    // get cad value
+    const toCAD = await gdax.ethInCAD()
 
     // announce
-    announcer.announceTotalDonationValue(total, total.times(toUSD))
+    announcer.announceTotalDonationValue(total, total.times(toCAD))
 
     // wait some time between txs to allow display on the frontend
     await timeout(1000)
@@ -134,12 +134,12 @@ announcer.io.on('connection', async (socket) => {
   // update total amount - fix this to just getter
   const total = await db.updateTotalDonationValue(0)
 
-  // get usd value
-  const toUSD = await gdax.ethInUSD()
+  // get cad value
+  const toCAD = await gdax.ethInCAD()
 
   socket.emit('TOTAL_DONATION_VALUE', {
     value: total.toString(),
-    inUSD: total.times(toUSD).toString(),
+    inCAD: total.times(toCAD).toString(),
   })
 })
 

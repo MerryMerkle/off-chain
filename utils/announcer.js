@@ -11,10 +11,10 @@ module.exports = (http) => {
 
   return {
     io,
-    announceTotalDonationValue: (value, inUSD) => {
+    announceTotalDonationValue: (value, inCAD) => {
       io.emit(TOTAL_DONATION_VALUE, {
         value: value.toString(),
-        inUSD: inUSD.toString(),
+        inCAD: inCAD.toString(),
       })
     },
     announceTierReached: (tier) => {
