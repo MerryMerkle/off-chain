@@ -146,3 +146,7 @@ announcer.io.on('connection', async (socket) => {
 http.listen(process.env.PORT || 3000, function () {
   console.log('listening on *:3000')
 })
+
+process.on('unhandledRejection', error => {
+  console.log('unhandledRejection', error.message, error.stack)
+})
