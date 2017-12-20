@@ -97,11 +97,18 @@ module.exports = {
     await connect
 
     // update for a donor
-    await client.query(`
+    const res = await client.query(`
       UPDATE aggregate_donations
       SET value = value + $1
       WHERE donor = $2
     `, [value.toString(), donor])
+
+    if (res.rowCount === 0) {
+      await client.query(`
+        INSERT INTO aggregate_donations (value, donor)
+        VALUES ($1, $2)
+      `, [value.toString(), donor])
+    }
   },
 
   /**
