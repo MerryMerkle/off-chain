@@ -16,6 +16,31 @@ const connect = Promise.resolve().then(() => {
 
 module.exports = {
   /**
+   * sets name
+   */
+  setName: async (donor, name) => {
+    await connect
+
+    // lol upsert
+    try {
+      const res = await client.query(`
+        UPDATE names
+        SET name = $1
+        WHERE donor = $2
+      `, [name, donor])
+
+      if (res.rowCount === 0) {
+        throw new Error('nope')
+      }
+    } catch (error) {
+      console.log('no update!')
+      await client.query(`
+        INSERT INTO names (donor, name)
+        VALUES ($1, $2)
+      `, [donor, name])
+    }
+  },
+  /**
    * updates total, returns new
    */
   updateTotalDonationValue: async (value) => {

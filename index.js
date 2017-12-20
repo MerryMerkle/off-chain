@@ -21,13 +21,14 @@
 
 require('dotenv').config()
 const cors = require('cors')
-const bodyParser = require('body-parser').urlencoded()
+const bodyParser = require('body-parser').urlencoded({})
 const app = require('express')()
 const http = require('http').Server(app)
 const WebSocket = require('ws')
 const db = require('./utils/db')
 const announcer = require('./utils/announcer')(http)
 const gdax = require('./utils/gdax')
+const recoverAddress = require('./utils/recoverAddress')
 
 app.use(cors({
   origin: '*',
@@ -143,12 +144,28 @@ announcer.io.on('connection', async (socket) => {
   })
 })
 
-app.post('/name', bodyParser, function (req, res) {
+app.post('/name', bodyParser, async function (req, res) {
   if (!req.body) {
     return res.sendStatus(400)
   }
 
-  console.log(req.body.text, req.body.sig)
+  try {
+    const signedBy = recoverAddress(req.body.data, req.body.sig)
+    if (signedBy === req.body.addr) {
+      console.log('valid!', signedBy, req.body.name)
+      await db.setName(signedBy, req.body.name)
+
+      const top50 = await db.getLeaderboard(50)
+      announcer.announceLeaderboard(top50)
+
+      return res.sendStatus(200)
+    } else {
+      throw new Error('nope')
+    }
+  } catch (error) {
+    console.error(error)
+    return res.sendStatus(400)
+  }
 })
 
 http.listen(process.env.PORT || 3000, function () {

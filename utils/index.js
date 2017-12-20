@@ -20,7 +20,7 @@ const startPinging = (ws) => {
 const formatTx = (tx) => {
   return {
     ...tx,
-    donor: tx.from,
+    donor: tx.from.toLowerCase(),
     txHash: tx.hash,
     value: new BigNumber(tx.value),
   }
