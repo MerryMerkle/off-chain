@@ -21,6 +21,7 @@
 
 require('dotenv').config()
 const cors = require('cors')
+const bodyParser = require('body-parser').urlencoded()
 const app = require('express')()
 const http = require('http').Server(app)
 const WebSocket = require('ws')
@@ -124,7 +125,6 @@ etherscan.onclose = () => {
 }
 
 announcer.io.on('connection', async (socket) => {
-
   const top50 = await db.getLeaderboard(50)
   // @TOOD - abstract this logic better
   socket.emit('LEADERBOARD', { leaderboard: top50 })
@@ -141,6 +141,14 @@ announcer.io.on('connection', async (socket) => {
     value: total.toString(),
     inCAD: total.times(toCAD).toString(),
   })
+})
+
+app.post('/name', bodyParser, function (req, res) {
+  if (!req.body) {
+    return res.sendStatus(400)
+  }
+
+  console.log(req.body.text, req.body.sig)
 })
 
 http.listen(process.env.PORT || 3000, function () {
