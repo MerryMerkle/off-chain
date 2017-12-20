@@ -7,6 +7,8 @@ const TOTAL_DONATION_VALUE = 'TOTAL_DONATION_VALUE'
 module.exports = (http) => {
   const io = require('socket.io')(http)
 
+  io.origins('*:*')
+
   return {
     io,
     announceTotalDonationValue: (value, inUSD) => {
