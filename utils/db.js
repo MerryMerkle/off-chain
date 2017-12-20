@@ -105,8 +105,8 @@ module.exports = {
 
     if (res.rowCount === 0) {
       await client.query(`
-        INSERT INTO aggregate_donations (value, donor)
-        VALUES ($1, $2)
+        INSERT INTO aggregate_donations (value, donor, updated_at)
+        VALUES ($1, $2, NOW())
       `, [value.toString(), donor])
     }
   },
