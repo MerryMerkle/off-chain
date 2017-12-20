@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "bignumber.js": "^5.0.0",
+    "body-parser": "^1.18.2",
     "cors": "^2.8.4",
     "dotenv": "^4.0.0",
     "eth-sig-util": "^1.4.0",

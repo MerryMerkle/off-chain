@@ -1,6 +1,8 @@
-var ethsigutil = require('eth-sig-util');
-var util = require('ethereumjs-util');
+const ethsigutil = require('eth-sig-util')
+const ethjsutil = require('ethereumjs-util')
 
-module.exports = function (msg, sig) {
-	return '0x' + util.pubToAddress(ethsigutil.extractPublicKey({data: msg, sig: sig})).toString('hex');
+module.exports = (msg, sig) => {
+  return '0x' + ethjsutil.pubToAddress(
+    ethsigutil.extractPublicKey({ data: msg, sig: sig })
+  ).toString('hex')
 }
