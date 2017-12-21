@@ -175,6 +175,8 @@ app.post('/name', bodyParser, async function (req, res) {
   }
 })
 
+app.get('/', (req, res) => { res.json({ success: true }) })
+
 http.listen(process.env.PORT || 3000, function () {
   console.log('listening on *:3000')
 })
