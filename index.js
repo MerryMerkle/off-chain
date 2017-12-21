@@ -77,7 +77,7 @@ const handleDonationTransactions = async (txs) => {
     }
 
     // wait some time between txs to allow display on the frontend
-    await timeout(1000)
+    await timeout(8 * 1000)
   }
 }
 
