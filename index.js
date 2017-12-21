@@ -80,7 +80,7 @@ const handleDonationTransactions = async (txs) => {
   }
 }
 
-const etherscan = new WebSocket('wss://socket.etherscan.io/wshandler', {
+const etherscan = new WebSocket('ws://socket.etherscan.io/wshandler', {
 
 })
 
