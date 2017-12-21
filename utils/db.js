@@ -96,18 +96,22 @@ module.exports = {
   updateAggregateDonation: async ({ donor, value }) => {
     await connect
 
-    // update for a donor
-    const res = await client.query(`
-      UPDATE aggregate_donations
-      SET value = value + $1
-      WHERE donor = $2
-    `, [value.toString(), donor])
-
-    if (res.rowCount === 0) {
-      await client.query(`
-        INSERT INTO aggregate_donations (value, donor, updated_at)
-        VALUES ($1, $2, NOW())
+    try {
+      // update for a donor
+      const res = await client.query(`
+        UPDATE aggregate_donations
+        SET value = value + $1
+        WHERE donor = $2
       `, [value.toString(), donor])
+
+      if (res.rowCount === 0) {
+        await client.query(`
+          INSERT INTO aggregate_donations (value, donor, updated_at)
+          VALUES ($1, $2, NOW())
+        `, [value.toString(), donor])
+      }
+    } catch (error) {
+      throw error
     }
   },
 
