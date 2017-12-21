@@ -25,7 +25,7 @@ module.exports = {
       SELECT id
       FROM tiers
       WHERE value < $1 AND reached = 0
-    `, [total])
+    `, [total.floor().toNumber()])
 
     if (res.rowCount === 0) {
       return null
@@ -77,7 +77,7 @@ module.exports = {
       UPDATE total_donations
       SET value = value + $1
       WHERE id = 0
-    `, [value.toString()])
+    `, [value.floor().toString()])
 
     // return new
     const res = await client.query(`
@@ -100,7 +100,7 @@ module.exports = {
       // update for a donor
       const res = await client.query(`
         UPDATE aggregate_donations
-        SET value = value + $1
+        SET value = value + $1, updated_at = NOW()
         WHERE donor = $2
       `, [value.toString(), donor])
 

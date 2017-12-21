@@ -20,6 +20,7 @@
 //        confirmations: '6' } ] }
 
 require('dotenv').config()
+const BigNumber = require('bignumber.js')
 const cors = require('cors')
 const bodyParser = require('body-parser').urlencoded({})
 const app = require('express')()
@@ -70,7 +71,7 @@ const handleDonationTransactions = async (txs) => {
     announcer.announceTotalDonationValue(total, total.times(toCAD))
 
     // did we reach a new tier?
-    const tierId = await db.getNewTier(toCAD.toNumber())
+    const tierId = await db.getNewTier(toCAD)
     if (tierId !== null) {
       announcer.announceTierReached(tierId)
     }
@@ -139,7 +140,7 @@ announcer.io.on('connection', async (socket) => {
   socket.emit('TREE_LEADERBOARD', { leaderboard: top50.slice(0, 31) })
 
   // update total amount - fix this to just getter
-  const total = await db.updateTotalDonationValue(0)
+  const total = await db.updateTotalDonationValue(new BigNumber(0))
 
   // get cad value
   const toCAD = await gdax.ethInCAD()
