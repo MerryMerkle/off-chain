@@ -19,6 +19,7 @@
 //        gasUsed: '21000',
 //        confirmations: '6' } ] }
 
+const fetch = require('isomorphic-fetch')
 require('dotenv').config()
 const BigNumber = require('bignumber.js')
 const cors = require('cors')
@@ -80,6 +81,44 @@ const handleDonationTransactions = async (txs) => {
     await timeout(8 * 1000)
   }
 }
+
+/**
+ * fast forward
+ */
+
+console.log('fast forwarding if necessary...')
+
+// eslint-disable-next-line max-len
+fetch(`https://api.etherscan.io/api?module=account&action=txlist&address=${process.env.DONATION_ADDRESS}&startblock=0&endblock=99999999&sort=asc`)
+  .then((res) => res.json())
+  .then(async (data) => {
+    const txs = data.result
+    txs.reverse()
+    const lastDonationTxHash = await db.getLastDonation()
+
+    console.log(`fetched. Looking for donations after ${lastDonationTxHash}`)
+
+    const unseenDonations = []
+    for (let i = 0; i < txs.length; i++) {
+      const tx = txs[i]
+      if (tx.hash === lastDonationTxHash) {
+        break
+      }
+
+      unseenDonations.push(tx)
+    }
+
+    console.log(`working on ${unseenDonations.length} donations`)
+
+    // await handleDonationTransactions(unseenDonations)
+
+    return null
+  })
+  .then(() => { return console.log('done fast forwarding') })
+  .catch((err) => {
+    console.error('error', err)
+    process.exit(1)
+  })
 
 const etherscan = new WebSocket('ws://socket.etherscan.io/wshandler', {
 
@@ -177,10 +216,11 @@ app.post('/name', bodyParser, async function (req, res) {
 
 app.get('/', (req, res) => { res.json({ success: true }) })
 
-http.listen(process.env.PORT || 3000, function () {
-  console.log('listening on *:3000')
-})
-
 process.on('unhandledRejection', error => {
   console.log('unhandledRejection', error.message, error.stack)
+
+})
+
+http.listen(process.env.PORT || 3000, function () {
+  console.log('listening on *:3000')
 })

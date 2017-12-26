@@ -144,4 +144,17 @@ module.exports = {
     `, [donor, value.toString(), txHash]
     )
   },
+
+  getLastDonation: async () => {
+    await connect
+
+    const res = await client.query(`
+      SELECT tx_hash
+      FROM donations
+      ORDER BY created_at DESC
+      LIMIT 1
+    `)
+
+    return res.rows[0].tx_hash
+  }
 }

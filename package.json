@@ -12,6 +12,7 @@
     "ethereumjs-util": "^5.1.2",
     "express": "^4.16.2",
     "gdax": "github:coinbase/gdax-node",
+    "isomorphic-fetch": "^2.2.1",
     "memory-cache": "^0.2.0",
     "pg": "^7.4.0",
     "socket.io": "^2.0.4",
