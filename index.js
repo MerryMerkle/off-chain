@@ -110,7 +110,7 @@ fetch(`https://api.etherscan.io/api?module=account&action=txlist&address=${proce
 
     console.log(`working on ${unseenDonations.length} donations`)
 
-    // await handleDonationTransactions(unseenDonations)
+    await handleDonationTransactions(unseenDonations)
 
     return null
   })
