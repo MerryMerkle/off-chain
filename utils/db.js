@@ -49,21 +49,16 @@ module.exports = {
 
     // lol upsert
     try {
-      const res = await client.query(`
-        UPDATE names
-        SET name = $1
-        WHERE donor = $2
-      `, [name, donor])
-
-      if (res.rowCount === 0) {
-        throw new Error('nope')
-      }
-    } catch (error) {
-      console.log('no update!')
       await client.query(`
         INSERT INTO names (donor, name)
         VALUES ($1, $2)
       `, [donor, name])
+    } catch (error) {
+      await client.query(`
+        UPDATE names
+        SET name = $1
+        WHERE donor = $2
+      `, [name, donor])
     }
   },
   /**
@@ -97,21 +92,17 @@ module.exports = {
     await connect
 
     try {
+      await client.query(`
+        INSERT INTO aggregate_donations (value, donor, updated_at)
+        VALUES ($1, $2, NOW())
+      `, [value.toString(), donor])
+    } catch (error) {
       // update for a donor
-      const res = await client.query(`
+      await client.query(`
         UPDATE aggregate_donations
         SET value = value + $1, updated_at = NOW()
         WHERE donor = $2
       `, [value.toString(), donor])
-
-      if (res.rowCount === 0) {
-        await client.query(`
-          INSERT INTO aggregate_donations (value, donor, updated_at)
-          VALUES ($1, $2, NOW())
-        `, [value.toString(), donor])
-      }
-    } catch (error) {
-      throw error
     }
   },
 

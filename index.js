@@ -218,7 +218,6 @@ app.get('/', (req, res) => { res.json({ success: true }) })
 
 process.on('unhandledRejection', error => {
   console.log('unhandledRejection', error.message, error.stack)
-
 })
 
 http.listen(process.env.PORT || 3000, function () {

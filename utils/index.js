@@ -9,7 +9,12 @@ const timeout = async (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const startPinging = (ws) => {
   const interval = setInterval(() => {
     if (ws.readyState === 1) {
-      ws.send(event('ping'))
+      ws.send(event('ping'), function (err) {
+        if (err) {
+          console.error(err)
+          process.exit(1)
+        }
+      })
     }
   }, 20 * 1000)
 
