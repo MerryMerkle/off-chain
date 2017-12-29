@@ -1,25 +1,3 @@
-
-// { event: 'txlist',
-//   address: '0xEC6d36A487d85CF562B7b8464CE8dc60637362AC',
-//   result:
-//    [ { blockNumber: '4754947',
-//        timeStamp: '1513609371',
-//        hash: '0x4fcc3b2fb9f5ccb959b980db45f26312a7b21d91f48f7d700df11c4ed1d006f3',
-//        nonce: '141',
-//        blockHash: '0x4c0fa6799bc3fca1865bcf10f8004067ccf62655a308a7a95cc0cbe4e44961c7',
-//        transactionIndex: '177',
-//        from: '0xec6d36a487d85cf562b7b8464ce8dc60637362ac',
-//        to: '0xec6d36a487d85cf562b7b8464ce8dc60637362ac',
-//        value: '0',
-//        gas: '31500',
-//        gasPrice: '4000000000',
-//        input: '0x',
-//        contractAddress: '',
-//        cumulativeGasUsed: '7664979',
-//        gasUsed: '21000',
-//        confirmations: '6' } ] }
-
-const fetch = require('isomorphic-fetch')
 require('dotenv').config()
 const BigNumber = require('bignumber.js')
 const cors = require('cors')
@@ -31,6 +9,7 @@ const db = require('./utils/db')
 const announcer = require('./utils/announcer')(http)
 const gdax = require('./utils/gdax')
 const recoverAddress = require('./utils/recoverAddress')
+const etherscanApi = require('./utils/etherscan')
 
 app.use(cors({
   origin: '*',
@@ -77,8 +56,10 @@ const handleDonationTransactions = async (txs) => {
       announcer.announceTierReached(tierId)
     }
 
-    // wait some time between txs to allow display on the frontend
-    await timeout(8 * 1000)
+    if (process.env.YES_TREE) {
+      // wait some time between txs to allow display on the frontend
+      await timeout(8 * 1000)
+    }
   }
 }
 
@@ -88,87 +69,118 @@ const handleDonationTransactions = async (txs) => {
 
 console.log('fast forwarding if necessary...')
 
-// eslint-disable-next-line max-len
-fetch(`https://api.etherscan.io/api?module=account&action=txlist&address=${process.env.DONATION_ADDRESS}&startblock=0&endblock=99999999&sort=asc`)
-  .then((res) => res.json())
-  .then(async (data) => {
-    const txs = data.result
-    txs.reverse()
-    const lastDonationTxHash = await db.getLastDonation()
+const fastForward = async () => {
+  const txs = await etherscanApi.getTransactions(process.env.DONATION_ADDRESS)
+  const lastDonationTxHash = await db.getLastDonation()
 
-    console.log(`fetched. Looking for donations after ${lastDonationTxHash}`)
+  console.log(`Fetched. Looking for donations after ${lastDonationTxHash}`)
 
-    const unseenDonations = []
-    for (let i = 0; i < txs.length; i++) {
-      const tx = txs[i]
-      if (tx.hash === lastDonationTxHash) {
-        break
-      }
-
-      unseenDonations.push(tx)
+  const unseenDonations = []
+  for (let i = 0; i < txs.length; i++) {
+    const tx = txs[i]
+    if (tx.hash === lastDonationTxHash) {
+      break
     }
 
-    console.log(`working on ${unseenDonations.length} donations`)
+    unseenDonations.push(tx)
+  }
 
-    // await handleDonationTransactions(unseenDonations)
+  console.log(`working on ${unseenDonations.length} donations`)
 
-    return null
-  })
-  .then(() => { return console.log('done fast forwarding') })
+  await handleDonationTransactions(unseenDonations)
+}
+
+const rebuildDatabase = async () => {
+  console.log('Nuking...')
+  // nuke the db of donation-related artifacts
+  await db.softNuke()
+
+  console.log('        Nuked.')
+
+  console.log('Scanning...')
+  // ask etherscan for all the transactions
+  const txs = await etherscanApi.getTransactions(process.env.DONATION_ADDRESS)
+
+  console.log(`           found ${txs.length} transactions. Latest is ${txs[0].hash}`)
+
+  await handleDonationTransactions(txs)
+
+  console.log('Done rebuilding.')
+}
+
+const main = async () => {
+  if (process.env.FAST_FORWARD) {
+    await fastForward()
+  }
+
+  if (process.env.REBUILD_DB) {
+    await rebuildDatabase()
+  }
+}
+
+main()
   .catch((err) => {
-    console.error('error', err)
+    console.error(err)
     process.exit(1)
   })
 
-const etherscan = new WebSocket('ws://socket.etherscan.io/wshandler', {
+/**
+ * NORMAL MONITORING STUFF
+ */
 
-})
+const activeListen = () => {
+  const etherscan = new WebSocket('ws://socket.etherscan.io/wshandler', {})
 
-etherscan.onopen = () => {
-  etherscan.send(event('txlist', {
-    address: process.env.DONATION_ADDRESS,
-  }))
-}
-etherscan.onerror = (err) => {
-  console.error(err)
-  process.exit(1)
-}
-etherscan.onmessage = parseMessage((message) => {
-  console.log(message)
-  switch (message.event) {
-  case 'txlist': {
-    handleDonationTransactions(message.result)
-      .catch((err) => {
-        console.error(err)
-        process.exit(1)
-      })
-    break
+  etherscan.onopen = () => {
+    etherscan.send(event('txlist', {
+      address: process.env.DONATION_ADDRESS,
+    }))
   }
-  case 'subscribe-txlist': {
-    switch (message.status) {
-    case '1':
-      console.log(`Watching transactions from ${message.message.split(' ')[1]}`)
+  etherscan.onerror = (err) => {
+    console.error(err)
+    process.exit(1)
+  }
+  etherscan.onmessage = parseMessage((message) => {
+    console.log(message)
+    switch (message.event) {
+    case 'txlist': {
+      handleDonationTransactions(message.result)
+        .catch((err) => {
+          console.error(err)
+          process.exit(1)
+        })
       break
-    case '0':
-      console.error(message)
-      process.exit(1)
-      // break
-    default:
-      console.error('Unknown Status', message)
     }
-    break
-  }
-  case 'pong':
-    // ignore pongs
-    break
-  default:
-    console.log('Unhandled message', message)
-  }
-})
+    case 'subscribe-txlist': {
+      switch (message.status) {
+      case '1':
+        console.log(`Watching transactions from ${message.message.split(' ')[1]}`)
+        break
+      case '0':
+        console.error(message)
+        process.exit(1)
+        // break
+      default:
+        console.error('Unknown Status', message)
+      }
+      break
+    }
+    case 'pong':
+      // ignore pongs
+      break
+    default:
+      console.log('Unhandled message', message)
+    }
+  })
 
-const cancelPinger = startPinging(etherscan)
-etherscan.onclose = () => {
-  cancelPinger()
+  const cancelPinger = startPinging(etherscan)
+  etherscan.onclose = () => {
+    cancelPinger()
+  }
+}
+
+if (!process.env.NO_LISTEN) {
+  activeListen()
 }
 
 announcer.io.on('connection', async (socket) => {

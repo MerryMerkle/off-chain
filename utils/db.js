@@ -147,5 +147,14 @@ module.exports = {
     `)
 
     return res.rows[0].tx_hash
-  }
+  },
+  softNuke: async () => {
+    await client.query('DELETE FROM donations WHERE 1=1')
+    await client.query('DELETE FROM aggregate_donations WHERE 1=1')
+    await client.query(`
+      UPDATE total_donations
+      SET value = 0
+      WHERE id = 0`
+    )
+  },
 }
