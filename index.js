@@ -105,7 +105,18 @@ const rebuildDatabase = async () => {
 
   await handleDonationTransactions(txs)
 
-  console.log('Done rebuilding.')
+  console.log('Done rebuilding. Adding Polychain')
+
+  // hardcode polychain
+  const polychainValue = (new BigNumber(18.5)).mul(10 ** 18)
+  await db.updateAggregateDonation({
+    donor: 'polychain',
+    value: polychainValue,
+  })
+  await db.updateTotalDonationValue(polychainValue)
+  await db.setName('polychain', 'Polychain Capital Team')
+
+  console.log('Done')
 }
 
 const main = async () => {
