@@ -19,6 +19,9 @@
     "web3": "^1.0.0-beta.26",
     "ws": "^3.3.3"
   },
+  "engines": {
+    "node": "9.4.0"
+  },
   "devDependencies": {
     "babel-eslint": "^8.0.3",
     "eslint": "^4.13.1",
